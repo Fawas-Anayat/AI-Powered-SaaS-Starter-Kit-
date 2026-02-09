@@ -42,6 +42,7 @@ class UserSignup(BaseModel):
         
         return v.lower()
     
+    
 
 
 
