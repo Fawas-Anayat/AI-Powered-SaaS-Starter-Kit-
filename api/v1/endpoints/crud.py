@@ -1,14 +1,15 @@
-from fastapi import APIRouter , Depends , HTTPException , status , Response
+from fastapi import APIRouter , Depends , HTTPException , status , Response , Cookie
 from db.session import Base
 from ..dependencies import get_async_db , authenticate_user
 from sqlalchemy.ext.asyncio import AsyncSession
 from schemas.user import UserSignup
 from models.models import User , UserSession , Refresh_Token 
-from core.security import hash_password , verify_password , create_tokens , get_token_hash , create_access_token , create_refresh_token
+from core.security import hash_password , verify_password , create_tokens , get_token_hash , create_access_token , create_refresh_token , verify_token
 from sqlalchemy import select
 from fastapi.security import OAuth2PasswordRequestForm
 from ..redis_utils import save_refresh_token_redis , verify_refresh_token_redis , delete_refresh_token_redis
-
+from jose import jwt , JWTError
+from core.config import settings
 
 
 
@@ -119,6 +120,118 @@ async def login(response : Response ,form_data :  OAuth2PasswordRequestForm = De
         }
     }
 
+# the logic of the refresh end point is as follow -> whent the user hits the refresh end point the server gets the refresh token from the cookies and then first checks if there is refresh token available or not ,,if yes the it checks whether its correct and if yes then it checks whether the user of this token is present in the db and if yes then it creates the new refresh as well as the access token and deletes the old ones and sets back the cookies with the new tokens and saves the hashed new refresh token in the db
+
+
+
+@router.get("/refresh")
+async def refresh(response : Response , refresh_token : str = Cookie(default=None) , db : AsyncSession = Depends(get_async_db)):
+    if not refresh_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="refresh token missing"
+        )
+    
+    user_id = verify_token(token=refresh_token)
+
+    is_valid = await verify_refresh_token_redis(user_id=user_id, refresh_token=refresh_token)
+    if not is_valid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token revoked or already used"
+        )
+    
+    result = await db.execute(select(User).where(User.user_id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User no longer exists"
+        )
+    
+    user_data = {
+        "user_id": user.user_id,
+        "email": user.email,
+        "name": user.username,
+    }
+
+    await delete_refresh_token_redis(user_id=user_id)
+
+    new_access_token = create_access_token(user_data)
+    new_refresh_token = create_refresh_token(user_data)
+
+    await save_refresh_token_redis(user_id=user_id, refresh_token=new_refresh_token)
+
+    response.set_cookie(
+        key="access_token",
+        value=new_access_token,
+        httponly=False,
+        secure=True,
+        samesite="lax",
+        max_age=1800,
+        path="/"
+    )
+
+    response.set_cookie(
+        key="refresh_token",
+        value=new_refresh_token,
+        httponly=False,
+        secure=True,
+        samesite="lax",
+        max_age=604800,
+        path="/"
+    )
+
+    return {"message": "Tokens refreshed successfully"}
+
+
+
+
+@router.post("/logout")
+async def logout(
+    response: Response,
+    refresh_token: str = Cookie(default=None),
+    access_token: str = Cookie(default=None),
+    db: AsyncSession = Depends(get_async_db)
+):
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Access token missing"
+        )
+
+    try:
+        payload = jwt.decode(
+            access_token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
+        )
+        user_id = payload.get("user_id")
+        token_type = payload.get("type")
+
+        if not user_id or token_type != "access":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token payload"
+            )
+
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired access token"
+        )
+
+    if refresh_token:
+        await delete_refresh_token_redis(user_id=user_id)
+
+
+
+    response.delete_cookie(key="access_token", path="/")
+    response.delete_cookie(key="refresh_token", path="/")
+
+    return {"message": "Logged out successfully"}
+
+
+#f I have a cookie for this domain, I attach it to every request going to that domain, regardless of where that request originated from.this is known as the CSRF and to prevent this we use the CSRF tokens that are explicitely sent to the front end and are sent to the server with each request
 
 
 
@@ -128,9 +241,7 @@ async def login(response : Response ,form_data :  OAuth2PasswordRequestForm = De
 
 
 
-
-
-
+# notes
 # email+password --> verify password 
 # check the user in the database if not present raise httpexception else 
 # make a refresh token and the access token and create a session

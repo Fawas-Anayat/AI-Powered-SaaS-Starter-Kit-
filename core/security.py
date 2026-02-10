@@ -4,6 +4,7 @@ from typing import Optional
 from core.config import settings
 import uuid
 from jose import jwt , JWTError
+from fastapi import HTTPException , status
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -79,3 +80,18 @@ def create_tokens(user: dict) -> dict:
 
 def get_token_hash(token : str):
     return pwd_context.hash(token)
+
+
+
+def verify_token(token : str):
+    payload = jwt.decode(token , settings.SECRET_KEY,settings.ALGORITHM)
+    user_id = payload.get("user_id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED , detail="invalid token"
+        )
+    
+    return user_id
+    
+
+# notes --browsers send the cookies with each request to the same domain from where they came ,,
