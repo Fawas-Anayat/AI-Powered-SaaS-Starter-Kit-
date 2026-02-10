@@ -5,6 +5,6 @@ import models
 
 app = FastAPI()
 
-app.include_router(crud.router,prefix="/signup")
+app.include_router(crud.router,prefix="")
 
 
