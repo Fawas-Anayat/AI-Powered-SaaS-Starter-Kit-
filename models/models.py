@@ -46,6 +46,8 @@ class User(Base):
         cascade="all, delete-orphan",
     )
 
+    documents = relationship("Document"  , back_populates="user" ,cascade="all , delete-orphan")
+
 
 class UserSession(Base):
 
@@ -74,6 +76,20 @@ class UserSession(Base):
         back_populates="session",
         cascade="all, delete-orphan",
     )
+
+
+class Document(Base):
+
+    __tablename__ = "documents"
+
+    file_id : Mapped[int] = mapped_column(primary_key=True , index=True)
+    user_id : Mapped[int] = mapped_column(ForeignKey("users.user_id" , ondelete="CASCADE"), nullable=False , index=True)
+    file_size : Mapped[int] = mapped_column()
+    file_path : Mapped[int] = mapped_column()
+    upload_time : Mapped[datetime] = mapped_column(nullable=False)
+
+    user = relationship("User" , back_populates ="documents")
+
 
 
 class Refresh_Token(Base):

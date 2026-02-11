@@ -231,7 +231,10 @@ async def logout(
     return {"message": "Logged out successfully"}
 
 
-#f I have a cookie for this domain, I attach it to every request going to that domain, regardless of where that request originated from.this is known as the CSRF and to prevent this we use the CSRF tokens that are explicitely sent to the front end and are sent to the server with each request
+#if I(browser) have a cookie for this domain, I attach it to every request going to that domain, regardless of where that request originated from.this is known as the CSRF and to prevent this we use the CSRF tokens that are explicitely sent to the front end and are sent to the server with each request
+
+# the refresh tokens are stored in the redis only if we want speed ,,
+# but if we want more security and the control we store the meta data of the refresh tokens in the db and track them but every time hitting the db
 
 
 
