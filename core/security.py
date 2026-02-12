@@ -1,10 +1,12 @@
 from passlib.context import CryptContext
-from datetime import datetime , timedelta
+from datetime import datetime , timedelta , timezone
 from typing import Optional
 from core.config import settings
 import uuid
 from jose import jwt , JWTError
 from fastapi import HTTPException , status
+import secrets
+import hashlib
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -92,6 +94,31 @@ def verify_token(token : str):
         )
     
     return user_id
+
+
+from datetime import datetime, timedelta, timezone
+import uuid
+from jose import jwt
+
+def generate_reset_token(email: str):
+    jti = str(uuid.uuid4())  
+
+    data = {
+        "sub": email,
+        "purpose": "password_reset",
+        "jti": jti,
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=10)
+    }
+
+    token = jwt.encode(
+        data,
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM
+    )
+
+    return token, jti
+
+
     
 
 # notes --browsers send the cookies with each request to the same domain from where they came ,,

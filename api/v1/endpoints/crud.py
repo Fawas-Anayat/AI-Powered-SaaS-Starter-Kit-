@@ -1,15 +1,18 @@
 from fastapi import APIRouter , Depends , HTTPException , status , Response , Cookie
 from db.session import Base
-from ..dependencies import get_async_db , authenticate_user
+from ..dependencies import get_async_db , authenticate_user ,get_current_user
 from sqlalchemy.ext.asyncio import AsyncSession
 from schemas.user import UserSignup
 from models.models import User , UserSession , Refresh_Token 
-from core.security import hash_password , verify_password , create_tokens , get_token_hash , create_access_token , create_refresh_token , verify_token
+from core.security import hash_password , verify_password , create_tokens , get_token_hash , create_access_token , create_refresh_token , verify_token , generate_reset_token
 from sqlalchemy import select
 from fastapi.security import OAuth2PasswordRequestForm
 from ..redis_utils import save_refresh_token_redis , verify_refresh_token_redis , delete_refresh_token_redis
 from jose import jwt , JWTError
 from core.config import settings
+from schemas.password import Changepasswordrequest , ResetToken
+import redis
+from services.email_service import send_password_reset_email
 
 
 
@@ -229,6 +232,70 @@ async def logout(
     response.delete_cookie(key="refresh_token", path="/")
 
     return {"message": "Logged out successfully"}
+
+
+
+# store the reset token in the redis if we want better performance and store in the db if we want the  better control over the user working and we want to store the audit logs and track whats the user is doing,,,the second aproach is more used in the SaaS.
+
+@router.post("/forgotPassword")
+async def forgot_password(
+    email: Changepasswordrequest,
+    db: AsyncSession = Depends(get_async_db)
+):
+    result = await db.execute(
+        select(User).where(User.email == email.email)
+    )
+    user = result.scalar_one_or_none()
+
+    if not user:
+        return {"message": "If this user exists, then a reset email has been sent"}
+
+    reset_token, jti = generate_reset_token(user.email)
+
+    await redis.set(
+        f"pwd_reset:{jti}",
+        user.user_id,
+        ex=600  
+    )
+
+    reset_link = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
+
+    await send_password_reset_email(user.email, reset_link)
+
+    return {"message": "If this user exists, then a reset email has been sent"}
+
+@router.post("/resetPassword")
+async def reset_password(payload : dict):
+    try:
+        decoded = jwt.decode(payload.token, settings.SECRET_KEY , settings.ALGORITHM)
+    except:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED , detail="invalid or expired token"
+        )
+    
+    if decoded.get("purpose") != "password_reset":
+        raise HTTPException(status_code=400, detail="Invalid token type")
+    
+    jti = decoded.get("jti")
+    email = decoded.get("sub")
+
+    user_id = await redis.get(f"pwd_reset:{jti}")
+
+    if not user_id:
+        raise HTTPException(status_code=400, detail="Token expired or already used")
+    
+    
+
+
+
+
+    
+
+    
+
+
+
+
 
 
 #if I(browser) have a cookie for this domain, I attach it to every request going to that domain, regardless of where that request originated from.this is known as the CSRF and to prevent this we use the CSRF tokens that are explicitely sent to the front end and are sent to the server with each request
