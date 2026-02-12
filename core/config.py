@@ -9,6 +9,14 @@ class Setting(BaseSettings):
     SECRET_KEY : str = "thisismynewsecretkeyandiscurrentlyusedinthisproject"
     REDIS_URL : str
 
+    FRONTEND_URL: str                   
+    FROM_EMAIL: str
+    SMTP_HOST: str                      
+    SMTP_PORT: int = 587                
+    SMTP_USER: str                       
+    SMTP_PASSWORD: str                   
+
+
 
     class Config :
         env_file = ".env"

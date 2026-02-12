@@ -7,10 +7,10 @@ from models.models import User , UserSession , Refresh_Token
 from core.security import hash_password , verify_password , create_tokens , get_token_hash , create_access_token , create_refresh_token , verify_token , generate_reset_token
 from sqlalchemy import select
 from fastapi.security import OAuth2PasswordRequestForm
-from ..redis_utils import save_refresh_token_redis , verify_refresh_token_redis , delete_refresh_token_redis
+from ..redis_utils import save_refresh_token_redis , verify_refresh_token_redis , delete_refresh_token_redis , redis_client
 from jose import jwt , JWTError
 from core.config import settings
-from schemas.password import Changepasswordrequest , ResetToken
+from schemas.password import Changepasswordrequest , ResetPasswordRequest
 import redis
 from services.email_service import send_password_reset_email
 
@@ -252,7 +252,7 @@ async def forgot_password(
 
     reset_token, jti = generate_reset_token(user.email)
 
-    await redis.set(
+    await redis_client.set(
         f"pwd_reset:{jti}",
         user.user_id,
         ex=600  
@@ -264,11 +264,15 @@ async def forgot_password(
 
     return {"message": "If this user exists, then a reset email has been sent"}
 
+
+
+
+
 @router.post("/resetPassword")
-async def reset_password(payload : dict):
+async def reset_password(payload : ResetPasswordRequest , db:AsyncSession = Depends(get_async_db)):
     try:
-        decoded = jwt.decode(payload.token, settings.SECRET_KEY , settings.ALGORITHM)
-    except:
+        decoded = jwt.decode(payload.token, settings.SECRET_KEY , algorithms=[settings.ALGORITHM])
+    except JWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED , detail="invalid or expired token"
         )
@@ -279,12 +283,32 @@ async def reset_password(payload : dict):
     jti = decoded.get("jti")
     email = decoded.get("sub")
 
-    user_id = await redis.get(f"pwd_reset:{jti}")
+    user_id = await redis_client.get(f"pwd_reset:{jti}")
 
     if not user_id:
         raise HTTPException(status_code=400, detail="Token expired or already used")
     
+    new_hashed_password = hash_password(payload.new_password)
+
+    result = await db.execute(select(User).where(User.user_id == int(user_id)))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.hashed_password = new_hashed_password
+    await db.commit()
+
+    await redis_client.delete(f"pwd_reset:{jti}")
+
+    return {"message": "Password has been reset successfully"}
+
+
+
+
+
     
+
 
 
 

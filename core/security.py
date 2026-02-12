@@ -86,7 +86,7 @@ def get_token_hash(token : str):
 
 
 def verify_token(token : str):
-    payload = jwt.decode(token , settings.SECRET_KEY,settings.ALGORITHM)
+    payload = jwt.decode(token , settings.SECRET_KEY,algorithms=[settings.ALGORITHM])
     user_id = payload.get("user_id")
     if not user_id:
         raise HTTPException(

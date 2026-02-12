@@ -5,10 +5,7 @@ class Changepasswordrequest(BaseModel):
 
     email : EmailStr
 
-class ResetToken(BaseModel):
+class ResetPasswordRequest(BaseModel):
 
-    email : EmailStr
-    purpose : str
-    jti : str
-    exp : datetime
-
+    token : str
+    new_password : str

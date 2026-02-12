@@ -5,7 +5,7 @@ from core.config import settings
 async def send_password_reset_email(email :str, reset_link : str) :
     message = EmailMessage()
     message["From"] = settings.FROM_EMAIL
-    message["To"] = settings.to_email
+    message["To"] = email
     message["Subject"] = "Password Reset Request"
 
     message.set_content(
