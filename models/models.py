@@ -87,6 +87,9 @@ class Document(Base):
     file_size : Mapped[int] = mapped_column()
     file_path : Mapped[int] = mapped_column()
     upload_time : Mapped[datetime] = mapped_column(nullable=False)
+    collection_name : Mapped[str] = mapped_column(nullable=True)
+    chunk_count : Mapped[int] = mapped_column(nullable=True)
+    processing_status : Mapped[str] = mapped_column(server_default="not processed")
 
     user = relationship("User" , back_populates ="documents")
 

@@ -14,7 +14,14 @@ class Setting(BaseSettings):
     SMTP_HOST: str                      
     SMTP_PORT: int = 587                
     SMTP_USER: str                       
-    SMTP_PASSWORD: str                   
+    SMTP_PASSWORD: str   
+
+    MODEL_NAME : str
+    CHUNK_SIZE :int
+    CHUNK_OVERLAP : int
+
+    CHROMA_DB_DIR :str
+    EMBEDDING_DIMENSION : str                
 
 
 
