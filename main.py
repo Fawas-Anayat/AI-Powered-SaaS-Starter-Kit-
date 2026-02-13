@@ -2,6 +2,12 @@ from api.v1.endpoints import crud , files , chat
 from fastapi import FastAPI
 from fastapi import APIRouter
 import models
+from core.logging_config import LOGGING_CONFIG
+from logging.config import dictConfig
+import logging
+
+dictConfig(LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 

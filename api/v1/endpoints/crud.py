@@ -73,7 +73,7 @@ async def signup_user(user_signup : UserSignup , db : AsyncSession = Depends(get
 async def login(response : Response ,form_data :  OAuth2PasswordRequestForm = Depends() , db : AsyncSession = Depends(get_async_db)) :
     auth_user = await authenticate_user(form_data.username, form_data.password ,db)
 
-    if auth_user is not False:
+    if auth_user :
         user={
             "user_id" : auth_user.user_id,
             "email" : auth_user.email ,
