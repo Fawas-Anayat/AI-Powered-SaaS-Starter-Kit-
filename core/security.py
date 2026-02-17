@@ -23,13 +23,13 @@ def create_access_token(data : dict,expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
 
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES*60)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     jti_id = str(uuid.uuid4())
 
-    iat_ts = int(datetime.utcnow().timestamp())
+    iat_ts = int(datetime.now(timezone.utc).timestamp())
     exp_ts = int(expire.timestamp())
     to_encode.update({"jti": jti_id})
     to_encode.update({
@@ -48,7 +48,7 @@ def create_access_token(data : dict,expires_delta: Optional[timedelta] = None):
 
 
 def create_refresh_token(data : dict ):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     expire = now + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
 
     iat_ts = int(now.timestamp())

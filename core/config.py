@@ -21,7 +21,7 @@ class Setting(BaseSettings):
     CHUNK_OVERLAP : int
 
     CHROMA_DB_DIR :str
-    EMBEDDING_DIMENSION : str  
+    EMBEDDING_DIMENSION : int 
 
     groq_api_key : str              
 
@@ -29,6 +29,6 @@ class Setting(BaseSettings):
 
     class Config :
         env_file = ".env"
-        case_sensitive = None
+        case_sensitive = False
 
 settings = Setting()

@@ -7,6 +7,7 @@ from schemas.chat import ChatRequest
 from models.models import Document
 from services.ai_service import document_processor
 from ..helper_functions import chat_groq_model
+import asyncio
 
 router = APIRouter()
 
@@ -24,13 +25,14 @@ async def chat(request :ChatRequest ,  current_user : User = Depends(get_current
     if document.processing_status != "completed":
        doc_metadata =await document_processor.process_and_store_in_chromadb(document.file_path ,document.content_type,document.user_id , document.file_id,db=db)
        await document_processor.store_in_normal_db(file_id=doc_metadata["file_id"] , collection_name=doc_metadata["collection_name"] ,chunk_count=doc_metadata["chunk_count"],db=db)
+       await db.refresh(document)
        
     
     vector_store =await document_processor.get_vector_store(document.collection_name)
 
-    relevant_chunks =await vector_store.similarity_search(
+    relevant_chunks =await asyncio.to_thread( vector_store.similarity_search,
         query=request.query,  
-        k=5  
+        k=5
     )
 
     context = "\n\n".join([chunk.page_content for chunk in relevant_chunks])

@@ -34,10 +34,10 @@ class DocumentProcessor:
             if file_type == "application/pdf":
                 loader = PyPDFLoader(file_path)
                 
-            elif file_type == "docx":
+            elif file_type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
                 loader = Docx2txtLoader(file_path)
                 
-            elif file_type == "txt":
+            elif file_type == "text/plain":
                 loader = TextLoader(file_path, encoding='utf-8')
                 
             else:

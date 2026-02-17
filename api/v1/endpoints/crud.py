@@ -27,7 +27,7 @@ async def signup_user(user_signup : UserSignup , db : AsyncSession = Depends(get
     try:
 
         result =await db.execute(select(User).where(User.email == user_signup.email))
-        user_email = result.one_or_none()
+        user_email = result.scalar_one_or_none()
 
 
         if  user_email:
@@ -97,7 +97,7 @@ async def login(response : Response ,form_data :  OAuth2PasswordRequestForm = De
         key="access_token",
         value=access_token,
         httponly=False,
-        secure=True,
+        secure=False,
         samesite="lax",
         max_age=1800,
         path="/"
@@ -107,7 +107,7 @@ async def login(response : Response ,form_data :  OAuth2PasswordRequestForm = De
         key="refresh_token",
         value=refresh_token,
         httponly=False,
-        secure=True,
+        secure=False,
         samesite="lax",
         max_age=604800,
         path="/"
@@ -168,7 +168,7 @@ async def refresh(response : Response , refresh_token : str = Cookie(default=Non
         key="access_token",
         value=new_access_token,
         httponly=False,
-        secure=True,
+        secure=False,
         samesite="lax",
         max_age=1800,
         path="/"
@@ -178,7 +178,7 @@ async def refresh(response : Response , refresh_token : str = Cookie(default=Non
         key="refresh_token",
         value=new_refresh_token,
         httponly=False,
-        secure=True,
+        secure=False,
         samesite="lax",
         max_age=604800,
         path="/"

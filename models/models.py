@@ -84,10 +84,10 @@ class Document(Base):
 
     file_id : Mapped[int] = mapped_column(primary_key=True , index=True)
     user_id : Mapped[int] = mapped_column(ForeignKey("users.user_id" , ondelete="CASCADE"), nullable=False , index=True)
-    file_size : Mapped[int] = mapped_column()
+    file_size : Mapped[float] = mapped_column()
     file_path : Mapped[str] = mapped_column()
     content_type : Mapped[str] = mapped_column(nullable=True)
-    upload_time : Mapped[datetime] = mapped_column(nullable=False)
+    upload_time : Mapped[datetime] = mapped_column(nullable=False,server_default=func.now())
     collection_name : Mapped[str] = mapped_column(nullable=True)
     chunk_count : Mapped[int] = mapped_column(nullable=True)
     processing_status : Mapped[str] = mapped_column(server_default="not processed")

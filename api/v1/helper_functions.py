@@ -19,7 +19,7 @@ async def create_tables():
 async def chat_groq_model(query : str , context : str) -> str:
     client =Groq(api_key=settings.groq_api_key)
     try:
-        response =await client.chat.completions.create(
+        response =client.chat.completions.create(
             model="openai/gpt-oss-120b",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant"},
