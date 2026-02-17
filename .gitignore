@@ -41,6 +41,7 @@ nosetests.xml
 # Database 
 *.db
 *.sqlite3
+chroma_db/
 
 # Uploads / generated files )
 uploads/

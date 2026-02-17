@@ -11,7 +11,7 @@ class User(Base):
     user_id: Mapped[int] = mapped_column(primary_key=True, index=True)
     username: Mapped[str] = mapped_column(index=True, unique=True, nullable=False)
     email: Mapped[str] = mapped_column(nullable=False, unique=True, index=True)
-    hashed_password: Mapped[str] = mapped_column(nullable=False)  # ❌ no index
+    hashed_password: Mapped[str] = mapped_column(nullable=False)  
 
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
     is_verified: Mapped[bool] = mapped_column(default=False, nullable=False)
@@ -85,7 +85,8 @@ class Document(Base):
     file_id : Mapped[int] = mapped_column(primary_key=True , index=True)
     user_id : Mapped[int] = mapped_column(ForeignKey("users.user_id" , ondelete="CASCADE"), nullable=False , index=True)
     file_size : Mapped[int] = mapped_column()
-    file_path : Mapped[int] = mapped_column()
+    file_path : Mapped[str] = mapped_column()
+    content_type : Mapped[str] = mapped_column(nullable=True)
     upload_time : Mapped[datetime] = mapped_column(nullable=False)
     collection_name : Mapped[str] = mapped_column(nullable=True)
     chunk_count : Mapped[int] = mapped_column(nullable=True)
@@ -118,3 +119,4 @@ class Refresh_Token(Base):
 
     user = relationship("User", back_populates="refresh_tokens")
     session = relationship("UserSession", back_populates="refresh_tokens")
+

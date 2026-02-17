@@ -258,6 +258,7 @@ async def forgot_password(
         ex=600  
     )
 
+
     reset_link = f"{settings.FRONTEND_URL}/reset-password?token={reset_token}"
 
     await send_password_reset_email(user.email, reset_link)

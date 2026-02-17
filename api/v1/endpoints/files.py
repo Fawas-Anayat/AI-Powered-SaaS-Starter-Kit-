@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..dependencies import get_async_db , get_current_user
 from models.models import Document,User
 from sqlalchemy import select
+from services.ai_service import document_processor
 
 
 router=APIRouter()
@@ -33,20 +34,27 @@ async def upload_doc(db:AsyncSession = Depends(get_async_db) ,file : UploadFile=
         
         async with aiofiles.open(file_path, "wb") as f:
             await f.write(file_content)
+
         
         new_document = Document(
             user_id=current_user.user_id,
             file_size=str(file_size),
             file_path=file_path,
-            upload_time = datetime.now(timezone.utc)
+            upload_time = datetime.now(timezone.utc),
+            content_type = file.content_type,
+            # processing_status = "completed",
+            # ollection_name = doc["collection_name"],
+            # chunk_count = doc["chunk_count"]
         )
         
         db.add(new_document)
         await db.commit()  
         await db.refresh(new_document)  
-        
+
+        doc =await document_processor.process_and_store_in_chromadb(file_path ,new_document.content_type,new_document.user_id ,new_document.file_id,db=db)
+          
         return {
-            "message": "File uploaded successfully",
+            "message": "File uploaded and processed successfully successfully",
             "file_name": file.filename,
             "file_size": file_size,
             "file_path": file_path,

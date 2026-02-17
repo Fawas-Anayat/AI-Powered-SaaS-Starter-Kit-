@@ -21,7 +21,9 @@ class Setting(BaseSettings):
     CHUNK_OVERLAP : int
 
     CHROMA_DB_DIR :str
-    EMBEDDING_DIMENSION : str                
+    EMBEDDING_DIMENSION : str  
+
+    groq_api_key : str              
 
 
 
